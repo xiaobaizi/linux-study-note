@@ -1,0 +1,159 @@
+Centos7安装配置NFS服务和挂载
+现在有3台服务器 s1(主)，s2(从), s3（从）需要实现文件实时同步，我们可以安装Nfs服务端和客户端来实现！
+
+
+
+一、安装 NFS 服务器所需的软件包：
+
+yum install -y nfs-utils
+二、编辑exports文件，添加从机
+
+ 
+vim /etc/exports
+/home/nfs/ 192.168.248.0/24(rw,sync,fsid=0)
+
+/usr/local/jar/dingzhi/uplaod   172.18.134.0/24(rw,sync,no_root_squash)
+/data/dingzhi/uplaod/ 172.18.134.0/24(rw,sync,no_root_squash)
+
+下面是一些NFS共享的常用参数： 
+ ro                只读访问 
+ rw                读写访问 
+ sync              所有数据在请求时写入共享 
+ async             NFS在写入数据前可以相应请求 
+ secure            NFS通过1024以下的安全TCP/IP端口发送 
+ insecure          NFS通过1024以上的端口发送 
+ wdelay            如果多个用户要写入NFS目录，则归组写入（默认） 
+ no_wdelay      如果多个用户要写入NFS目录，则立即写入，当使用async时，无需此设置。 
+ Hide                在NFS共享目录中不共享其子目录 
+ no_hide           共享NFS目录的子目录 
+ subtree_check   如果共享/usr/bin之类的子目录时，强制NFS检查父目录的权限（默认） 
+ no_subtree_check   和上面相对，不检查父目录权限 
+ all_squash               共享文件的UID和GID映射匿名用户anonymous，适合公用目录。 
+ no_all_squash         保留共享文件的UID和GID（默认） 
+ root_squash             root用户的所有请求映射成如anonymous用户一样的权限（默认） 
+ no_root_squash         root用户具有根目录的完全管理访问权限 
+ anonuid=xxx            指定NFS服务器/etc/passwd文件中匿名用户的UID 
+例如可以编辑/etc/exports为： 
+/tmp　　　　　*(rw,no_root_squash) 
+/home/public　192.168.0.*(rw)　　 *(ro) 
+/home/test　　192.168.0.100(rw) 
+/home/linux　 *.the9.com(rw,all_squash,anonuid=40,anongid=40)
+
+同192.168.248.0/24一个网络号的主机可以挂载NFS服务器上的/home/nfs/目录到自己的文件系统中
+
+rw表示可读写；sync表示同步写，fsid=0表示将/data找个目录包装成根目录
+
+三、启动nfs服务
+
+先为rpcbind和nfs做开机启动：(必须先启动rpcbind服务)
+
+ 
+systemctl enable rpcbind.service
+systemctl enable nfs-server.service
+然后分别启动rpcbind和nfs服务：
+
+ 
+systemctl start rpcbind.service
+systemctl start nfs-server.service
+确认NFS服务器启动成功：
+
+ 
+rpcinfo -p
+检查 NFS 服务器是否挂载我们想共享的目录 /home/nfs/：
+
+exportfs -r
+#使配置生效
+
+exportfs
+#可以查看到已经ok
+/home/nfs 192.168.248.0/24
+
+四、在从机上安装NFS 客户端
+
+首先是安裝nfs，同上，然后启动rpcbind服务
+
+先为rpcbind做开机启动：
+
+systemctl enable rpcbind.service
+
+然后启动rpcbind服务：
+
+systemctl start rpcbind.service
+
+注意：客户端不需要启动nfs服务
+
+检查 NFS 服务器端是否有目录共享：showmount -e nfs服务器的IP
+
+showmount -e 192.168.248.208
+Export list for 192.168.248.208:
+/home/nfs 192.168.248.0/24
+在从机上使用 mount 挂载服务器端的目录/home/nfs到客户端某个目录下：
+
+
+cd /home && mkdir /nfs
+mount -t nfs 192.168.248.208:/home/nfs /home/nfs
+
+df -h 查看是否挂载成功。
+
+ 
+
+http://blog.csdn.net/taiyang1987912/article/details/41696319
+
+http://www.linuxidc.com/Linux/2015-05/117378.htm
+
+ 
+
+ 
+
+复制代码
+ [root@localhost ~]# showmount -e 172.19.162.102
+clnt_create: RPC: Port mapper failure - Unable to receive: errno 113 (No route to host) 解决方法： [root@pro-www-m root]# rpcinfo -p 172.19.162.102
+   program vers proto   port  service
+    100000    4   tcp    111  portmapper
+    100000    3   tcp    111  portmapper
+    100000    2   tcp    111  portmapper
+    100000    4   udp    111  portmapper
+    100000    3   udp    111  portmapper
+    100000    2   udp    111  portmapper
+    100005    1   udp  20048  mountd
+    100005    1   tcp  20048  mountd
+    100005    2   udp  20048  mountd
+    100005    2   tcp  20048  mountd
+    100005    3   udp  20048  mountd
+    100005    3   tcp  20048  mountd
+    100003    3   tcp   2049  nfs
+    100003    4   tcp   2049  nfs
+    100227    3   tcp   2049  nfs_acl
+    100003    3   udp   2049  nfs
+    100003    4   udp   2049  nfs
+    100227    3   udp   2049  nfs_acl
+    100021    1   udp  31206  nlockmgr
+    100021    3   udp  31206  nlockmgr
+    100021    4   udp  31206  nlockmgr
+    100021    1   tcp  31241  nlockmgr
+    100021    3   tcp  31241  nlockmgr
+    100021    4   tcp  31241  nlockmgr
+
+
+iptables -I INPUT -p tcp -s 172.19.162.100 --dport 111 -j ACCEPT
+iptables -I INPUT -p udp -s 172.19.162.100 --dport 111 -j ACCEPT
+iptables -I INPUT -p tcp -s 172.19.162.100 --dport 2049 -j ACCEPT
+iptables -I INPUT -p udp -s 172.19.162.100 --dport 2049 -j ACCEPT
+
+iptables -I INPUT -p tcp -s 172.19.162.100 --dport 20048 -j ACCEPT
+iptables -I INPUT -p udp -s 172.19.162.100 --dport 20048 -j ACCEPT
+iptables -I INPUT -p tcp -s 172.19.162.100 --dport 31206 -j ACCEPT
+iptables -I INPUT -p udp -s 172.19.162.100 --dport 31206 -j ACCEPT
+
+
+遇到错误问题处理：
+报错提示：
+
+root@wheezy-node2:/# mount -o nfsvers=3 10.0.1.84:/home/share /mnt
+mount.nfs: Stale NFS file handle
+错误原因是客户端之前挂载的mnt目录在没有卸载的情况下，服务器侧把这个目录移除了，才会出现这样的错误提示。解决的办法就是在客户端umount一下，在重新挂载就好了。
+
+root@wheezy-node2:/# umount /mnt
+root@wheezy-node2:/# mount -o nfsvers=3 10.0.1.84:/home/share /mnt
+root@wheezy-node2:/# ls -l
+mount.nfs: Stale file handle

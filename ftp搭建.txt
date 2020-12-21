@@ -1,0 +1,214 @@
+1 ftp的安装
+#安装
+yum install -y vsftpd
+
+#设置开机启动
+systemctl enable vsftpd.service
+
+#启动
+systemctl start vsftpd.service
+
+#停止
+systemctl stop vsftpd.service
+
+#查看状态
+systemctl status vsftpd.service
+2、配置FTP 
+#打开配置文件
+vim /etc/vsftpd/vsftpd.conf
+
+#显示行号
+:set number
+
+#修改配置 12 行
+anonymous_enable=NO
+
+#修改配置 33 行
+anon_mkdir_write_enable=YES
+
+#修改配置48行
+chown_uploads=YES
+
+#修改配置72行
+async_abor_enable=YES
+
+#修改配置82行
+ascii_upload_enable=YES
+
+#修改配置83行
+ascii_download_enable=YES
+
+#修改配置86行
+ftpd_banner=Welcome to blah FTP service.
+
+#修改配置100行
+chroot_local_user=YES
+
+
+#添加下列内容到vsftpd.conf末尾
+use_localtime=YES
+listen_port=21
+idle_session_timeout=300
+guest_enable=YES
+guest_username=vsftpd
+user_config_dir=/etc/vsftpd/vconf
+data_connection_timeout=1
+virtual_use_local_privs=YES
+pasv_min_port=40000
+pasv_max_port=40010
+accept_timeout=5
+connect_timeout=1
+allow_writeable_chroot=YES
+例子
+anonymous_enable=NO
+local_enable=YES
+write_enable=YES
+local_umask=022
+anon_upload_enable=YES
+anon_mkdir_write_enable=YES
+dirmessage_enable=YES
+xferlog_enable=YES
+connect_from_port_20=YES
+chown_uploads=YES
+xferlog_std_format=YES
+async_abor_enable=YES
+ascii_upload_enable=YES
+ascii_download_enable=YES
+ftpd_banner=Welcome to blah FTP service.
+chroot_local_user=YES
+chroot_list_enable=YES
+chroot_list_file=/etc/vsftpd/chroot_list
+listen=NO
+listen_ipv6=YES
+
+pam_service_name=vsftpd
+userlist_enable=YES
+tcp_wrappers=YES
+
+use_localtime=YES
+listen_port=21
+idle_session_timeout=300
+guest_enable=YES
+guest_username=vsftpd
+user_config_dir=/etc/vsftpd/vconf
+data_connection_timeout=1
+virtual_use_local_privs=YES
+pasv_min_port=40000
+pasv_max_port=40010
+accept_timeout=5
+connect_timeout=1
+
+
+
+3、建立用户文件
+#创建编辑用户文件
+vim /etc/vsftpd/virtusers
+#第一行为用户名，第二行为密码。不能使用root作为用户名 
+
+bjhwkj
+bjhwkj435
+qyhwkj
+qyhwkj231
+
+4、生成用户数据文件
+# 修改前先备份 
+
+cp /etc/pam.d/vsftpd /etc/pam.d/vsftpd.bak
+
+vi /etc/pam.d/vsftpd
+#先将配置文件中原有的 auth 及 account 的所有配置行均注释掉
+auth sufficient /lib64/security/pam_userdb.so db=/etc/vsftpd/virtusers 
+account sufficient /lib64/security/pam_userdb.so db=/etc/vsftpd/virtusers 
+
+# 如果系统为32位，上面改为lib
+
+6、新建系统用户vsftpd，用户目录为/home/vsftpd
+
+#用户登录终端设为/bin/false(即：使之不能登录系统)
+useradd vsftpd -d /home/vsftpd -s /bin/false
+chown -R vsftpd:vsftpd /home/vsftpd
+
+7、建立虚拟用户个人配置文件
+
+mkdir /etc/vsftpd/vconf
+cd /etc/vsftpd/vconf
+
+#这里建立虚拟用户leo配置文件
+touch bjhwkj && touch qyhwkj
+
+#编辑leo用户配置文件，内容如下，其他用户类似
+vi bjhwkj
+
+local_root=/home/vsftpd/bjhwkj/
+write_enable=YES
+anon_world_readable_only=NO
+anon_upload_enable=YES
+anon_mkdir_write_enable=YES
+anon_other_write_enable=YES
+
+vi qyhwkj
+
+local_root=/home/vsftpd/bjhwkj/
+write_enable=YES
+anon_world_readable_only=NO
+anon_upload_enable=YES
+anon_mkdir_write_enable=YES
+anon_other_write_enable=YES
+
+
+#建立leo用户根目录
+mkdir -p /home/vsftpd/bjhwkj/  && mkdir -p /home/vsftpd/qyhwkj/
+
+
+8、防火墙设置
+
+IPtables 的设置方式：
+vi /etc/sysconfig/iptables
+#编辑iptables文件，添加如下内容，开启21端口
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 21 -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 40000:40010 -j ACCEPT
+
+
+firewall 的设置方式：
+firewall-cmd --zone=public --add-service=ftp --permanent
+
+firewall-cmd --zone=public --add-port=21/tcp --permanent
+firewall-cmd --zone=public --add-port=40000-40010/tcp --permanent
+
+9、重启vsftpd服务器
+
+systemctl restart vsftpd.service
+
+10、使用ftp工具连接测试
+这个时候，使用ftp的工具连接时，我们发现是可以连接的。传输文件的时候，会发现文件上传和下载都会出现
+
+500、503 、200等问题。这个时候，可以进行以下操作：
+
+如果还是有问题尝试给我们用户的ftp目录，设置一下操作权限
+chmod -R 775 /home/vsftpd/
+以上是
+
+
+安装问题
+1 550 create  delete  错误 ，ie浏览器  Internet选项 - 高级- 使用被动ftp去掉勾
+2 权限问题，chmod -R 775 /home/vsftpd/
+
+修改需求
+两个用户访问一个目录，修改配置
+[root@server2 vconf]# cat bjhwkj 
+local_root=/home/vsftpd/
+write_enable=YES
+anon_world_readable_only=NO
+anon_upload_enable=YES
+anon_mkdir_write_enable=YES
+anon_other_write_enable=YES
+bjhwkj用户在/home/vsftpd 下所有文件都可以访问上传下载删除，读写
+
+[root@server2 vconf]# cat qyhwkj 
+local_root=/home/vsftpd/
+#write_enable=NO
+anon_world_readable_only=NO
+#anon_upload_enable=YES
+#anon_mkdir_write_enable=YES
+#anon_other_write_enable=YES
+qyhwkj用户在/home/vsftpd 下所有文件只能读

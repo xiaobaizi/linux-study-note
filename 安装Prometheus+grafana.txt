@@ -1,0 +1,77 @@
+0.简单说明
+
+Prometheus是一个开源的服务监控系统，它通过HTTP协议从远程的机器收集数据并存储在本地的时序数据库上。
+它提供了一个简单的网页界面、一个功能强大的查询语言以及HTTP接口等。
+Prometheus通过安装在远程机器上的exporter来收集监控数据。
+
+node_exporter		用于机器系统数据
+mysqld_exporter		用于Mysql服务器数据
+redis_exporter		用于Redis服务器数据
+
+监控系统数据，安装node_exporter；监控MySQL，安装mysqld_exporter。可以单独安装。
+
+注：下文中出现的软件经过本人测试，可以使用，但是其他不保证。
+因为测试过程中出现了因为版本原因导致数据无法展示的问题了。
+
+1.客户端安装node_exporter-0.15.2.linux-amd64.tar.gz
+
+解压，启动:./node_exporter &
+
+在Prometheus配置文件中添加如下配置（缩进一定不能错）：
+
+  - job_name: 'node1-sys'		# 自定义监控名字
+    static_configs:
+      - targets: ['192.168.1.130:9100']		# 端口为9100
+        labels:
+          instance: node1-sys	# 自定义实例名字
+
+2.客户端安装mysqld_exporter-0.10.0.linux-amd64.tar.gz
+
+7系列的红帽系统安装mariadb:yum install -y mariadb mariadb-devel mariadb mariadb-server
+
+先安装MySQL，然后授权用户访问MySQL服务端。
+
+mysql> GRANT REPLICATION CLIENT, PROCESS ON *.* TO 'monitor'@'localhost' identified by 'test123';
+mysql> GRANT SELECT ON performance_schema.* TO 'monitor'@'localhost';
+
+解压软件，进入目录，生成配置文件
+
+# vim .my.cnf 
+[client]
+user=monitor
+password=test123
+
+启动：./mysqld_exporter -config.my-cnf=".my.cnf" &
+
+在Prometheus配置文件中添加如下配置
+
+  - job_name: 'node1-mysql'
+    static_configs:
+      - targets: ['192.168.1.130:9104']	# 端口为9104
+        labels:
+          instance: node1-mysql
+
+3.服务端安装prometheus-2.3.1.linux-amd64.tar.gz
+
+端口9090，配置好后，启动：./prometheus --config.file=prometheus.yml & 		  
+
+4.服务端安装grafana-5.1.4-1.x86_64.rpm		rpm -ivh grafana-5.1.4-1.x86_64.rpm
+
+Grafana是一个开源的功能丰富的数据可视化平台，通常用于时序数据的可视化。端口3000。
+
+安装仪表盘（Percona提供）。在/etc/grafana/provisioning/dashboards/目录下，复制sample.yaml一份为default.yaml，编辑该文件并取消文件中的注释。
+
+git clone https://github.com/percona/grafana-dashboards.git
+cp -r grafana-dashboards/dashboards /var/lib/grafana
+
+也可以先把仪表盘下载下来。放入/var/lib/grafana/dashboards（需要新建）目录下。
+
+启动服务：/etc/init.d/grafana-server start
+
+访问网址：http://grafana所在的IP:3000，默认的用户名和密码都是admin。
+首先添加Data Source：点击左侧的设置，选择Data Source。Type选择Prometheus，Name自定义。URL根据实际填写。其他默认。点击'Add'。
+
+查看监控数据。点击左侧的Dashboards，在下拉框选择对应的仪表盘。在右上角选择监控的时间段和刷新频率。
+
+如果只是想监控MySQL或MongoDB，那么请使用PMM（Percona Monitoring and Management）监控工具。
+在Prometheus+Granafa基础之上添加了慢查询收集等额外功能，更专业的MySQL&MongoDB监控系统。

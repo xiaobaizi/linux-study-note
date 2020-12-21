@@ -1,0 +1,4 @@
+https://www.cnblogs.com/lyq863987322/p/8516958.html  参考部署
+https://www.cnblogs.com/galengao/p/5780938.html      参考集群配置
+高可用集群部署参考
+https://blog.csdn.net/networken/article/details/89599004?utm_medium=distribute.pc_relevant_download.none-task-blog-BlogCommendFromBaidu-1.nonecase&depth_1-utm_source=distribute.pc_relevant_download.none-task-blog-BlogCommendFromBaidu-1.nonecas

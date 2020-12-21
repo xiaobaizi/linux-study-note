@@ -1,0 +1,256 @@
+1.DBMS的基本用途
+database developer
+database  user
+database  administrator
+2.数据库发展经历
+层次模型数据库--网状模型数据库--关系型数据库
+3 数据结构
+关系型数据库系统中主要的数据结构是关系，可以用行和列组成二维表来直观地表示
+4关系数据模型
+E-R（实体entity，属性attribute，联系relationship）
+学生   学号 姓名 性别     一对一  一对多  多对多
+
+
+连接数据库
+（1）数据库的服务要启动
+   services.msc（Windows下命令查看oracle服务是否启动）  
+（2）有正确的用户名和密码
+（3）sql*plus 工具
+oracle 控制台服务
+       定时器服务
+	   监听器服务
+oracleserviceORCL	   数据库服务
+
+
+连接数据库  sqlplus sys/ as sysdba    enter password:
+SQL>  连接成功!
+语法：
+sqlplus  用户名/密码  @host——string   用户身份
+示例
+sqlplus sys/ as  sysdba
+注意：
+如果是sys用户，则必须指定身份，as  sysdba 或者 as sysoper
+如果指定了sys的身份，可以不输入密码，系统也可以正常登陆
+select * from  all_users; 查询用户
+create user  用户名  identified by   密码；   创建用户及密码
+grant connect，resource to   用户；
+oracle 创建表是在某个用户下创建表。
+新创建的用户不具备任何权限，不能连接数据库
+必须授于权限
+第二章   sql与sqlplus
+  sql（结构话查询语言）语句分类
+  从数据库中查询，插入，删除，创建和操作数据库对象，控制对数据库的访问
+   分类：
+   ddl（数据定义语言）：create drop rename
+   dml（数据操作语言）：insert update delete
+   dcl （数据控制语言）：grant，revoke
+   查询
+   事务控制语言：commit，rollback，savepoint
+   一 显示表结构
+     sql> desc  表；
+   二 查看缓存的语法
+     sql> list或者l
+   三 运行缓存中的sql
+     sql> /
+	 sql> n   定位到sqlplus的当前行，如 第一行，等
+	 sql> del n  删除缓存中的某个命令
+	 sql> a 空格在加一个空格 加where
+	 sql> c /or 1=1/   修改缓存中的sql语句
+第三章  创建表和维护表
+oracle 常用的数据类型  创建表，删除表 ，修改表，对表的数据维护操作
+数据类型：char varchar2 date integer  number binry_float binry_double
+number(6，2) 四舍五入  日期插入是日月年  09-9月-99
+创建表 
+语法：create  table 【用户名。】表名 
+      （列名 数据类型 【default 默认值】【，。。。】）
+列如
+      create table  student （
+	  id  number（5），--学生编号
+	  name varchar2（10） --学生姓名
+	  ）；
+创建表规范：
+必须以英文开头，名字的长度最短为一个字符，最长为30个，不能与oracle关键字一样
+利用子查询创建表：
+语法格式：
+      create  table 表名 【列名，列名，。。】 as  子查询
+	  create  table worker as select * from 数据库名；
+添加主键约束（数据不能为空，不能重复）
+
+修改表结构：
+1 在一个表中加入一个新的列
+2 修改在一个表中已经存在的列
+3 从一个表中删除一列
+语法：
+     alter table 表名 add 
+     （列名 数据类型 【default 默认值】【，列名。。】）
+添加数据类型：    alter table a  add age number（2） default 23  
+修改数据类型	 alter table a modify age varchar2（3）；
+删除数据类型     alter table 表名 drop column 列名；
+ 
+删除表；
+   drop  table  表名；
+ 被删除的表是放入回收站，（flashback drop）这样可以恢复被删除的数据
+flashback  table  a  to  before  drop；恢复删除的表数据
+show  recyclebin  查看回收站数据 
+
+截断表
+     truncate table  表名；
+	 删除表中的所有数据，但保留表结构
+	 没有备份，删除无法恢复
+	 释放表所占用的空间
+
+插入数据操作
+语法；insert into 表名 [(列名，列名)]
+      values （数值，数值，。。）
+列如：insert  into a （id，name） values （1003，'王者'）；
+
+更新数据操作
+  update  表名  set  列名=数值[，列名=数值,...] where条件	
+  select rownum  n，id，name from a；能找到行号
+删除数据操作
+  delete from  表  【where 条件】
+  rollback 回滚
+
+oracle 约束
+5种约束
+1 非空（not null）：定义的列决不能为空
+2 唯一（unique）：在表中每一行中所定义的列，其列值不能相同
+3 主键（primary key）：唯一标识表中的一行不能为空
+4 外键（foreign key）：用来维护子表（child table）和父表（parent table）
+  之间的引用完整性
+5 条件（check）：表中每行都要满足该约束条件
+约束的作用：提供了完整性，引用完整性，用户自定义完整性。
+引入约束的目的是防止哪些无效或有问题的数据输入表中，维护数据库数据的唯一性；
+oracle中的关键字constraint
+sql>create table c (
+    id varchar2(10),
+	name varchar2(10),
+	constraint pk_c_id primary key(key )  定义约束名pk_c_id
+	);
+外键约束；引用完整性约束（表与表之间的关系用到外键约束）
+1 子父关系 2 外键可以很好保护两表之间的关系 3掌握外键的语法
+constraint 外键名   foreign key （列名）references（参照）  父表 （列名）
+4 外键允许为空 5 插入有数据的值，外键中的值必须能够在父表中找到
+drop table game cacasde constraint purge（有关联的约束删除）
+alter table player drop constraint 外键名；
+
+非空约束
+alter table student modify  name not null；
+唯一约束
+alter table student add constraint uk_stu  unique（name）；
+check约束
+
+查看有关约束的信息
+1 利用数据字典user_constraints可以查看用户模式下约束信息
+2 利用数据字典user_cons_columns可以查看每张表定义的约束是在那一列上的
+
+
+第四章 sql查询语句
+ select语句从单个表中检索数据
+ 语法：
+  select * | {[distinct]列名，列名，。。。} from 表名|
+  [where 条件]
+  [group by 分组列名]
+  [having 聚合函数]
+  [order by 排序列名 ASC|DESC] 
+ 在sql中可以使用算数表达式：+-*%
+ select empno，enamel ，sal+500 from emp；
+ 在查询语句中，为表或者列加上别名
+ 连接运算符 ||  合并在一起
+ select name || snow from  student；
+ 去掉重复的值  select  distinct  name  from  student；
+ where 条件
+ 格式：where 列名  比较操作符 数值|表达式| 列名 
+ 常用的比较操作符：< > = <= >= <> != between..and  in  like 
+ and  or  not 3个逻辑运算符
+ like通配符 两种%和_, %代表零个或多个字符  _代表一个且只能是一个字符；
+ select * from  stu where name like ‘成%’；
+ escape 转义符  \ $ 
+ is null 显示空值
+ select *from play where game is null；
+and  两边条件都成立  or  一边条件成立就可以
+order  by  进行排序  asc 升序   desc   降序
+
+
+sql函数
+
+oracle 提供了丰富的内建函数，一个函数接受0个或者多个输入值，并返回一个输出值
+oracle函数分为两组，单行函数（single row function） 和聚合函数（aggregate function）
+单行函数：一次只操作一行并且针对每个输出行返回一行
+聚合函数：同时对多个行进行操作并返回一行输出结果
+单行函数：字符函数和数字函数，转换函数，日期函数，正则表达式函数
+          字符函数:concat(m,n) initcap(n) instr(x,y,n,m )
+		  
+字符函数数字函数日期函数很重要
+日期函数：
+select sysdate from sual；
+add_months
+last_day
+next_day
+months_between
+trunc:
+to_char:
+to_date:
+to_unember
+聚合函数：count记录数  min最小值 max最大值 sum求和 avg平均值
+order by 排序：
+group by 主要可以用于将行分组为具有相同列值的的多个部分
+having 对聚合函数进行限制
+
+第五章 sql高级查询
+连接的定义
+多表查询
+连接分类
+各种连接分类的应用
+子查询操作
+
+
+连接的定义：
+语法格式：
+第一种：
+select table1.column_name ,table2.column from table1,table2 where 
+table1.column1 join_operator table2.column2;
+第二种
+select table.column_name,table2.column from table1 join_type table2 on table1.column1 join_operator
+ table2.column2 where 子句；
+ 连接分类：
+ 1 内连接
+    等值连接 
+	    = 等号连接
+	不等值连接
+	   < > = 等等 
+	自然连接
+	    基于两个表的同名的一个或多个列
+ 2 外连接  关键字outer join 
+   左外连接
+    left outer join  
+   右外连接
+    right outer join 
+   全连接
+     full outer join 
+ 3 自连接，返回连接到同一表中的行
+ 4 交叉连接
+集合操作：
+union 用于多个查询结果相加
+intersect 是交集运算
+minus 改运算可以找出两个给定集合之间的差异
+
+子查询 
+单行子查询：不向外部的sql语句返回结果，或者只返回一行
+多行子查询：向外部的sql语句返回一行或多行
+in是关键字
+exists关键字
+all 关键字
+子查询还有3种子类型
+1 多列子查询
+2 关联子查询
+3 嵌套子查询
+
+视图
+视图是一个或多表上的预定义查询，这些表称为基表。通过视图
+可以对基表进行dml操作。
+注意：视图中并不存储数据，他们只会访问基表中的行
+视图权限：
+  给相应用户给权限
+  grant  create view to Scott；
+

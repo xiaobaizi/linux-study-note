@@ -1,0 +1,20 @@
+一 安装双主keepalived配置参考如下
+https://www.cnblogs.com/iuskye/p/6852073.html  #配置当合理应用
+二 Failed to start LVS and VRRP High Availability Monitor 问题处理
+https://my.oschina.net/u/4301507/blog/3878207  #主要是对应用启动了解清楚
+
+
+复制/sbin/keepalived到/usr/sbin下
+> cp /keepalived/sbin/keepalived /usr/sbin/
+
+keepalived默认会读取/etc/keepalived/keepalived.conf配置文件
+> mkdir /etc/keepalived
+> cp /keepalived/etc/keepalived/keepalived.conf /etc/keepalived/
+
+复制sysconfig文件到/etc/sysconfig下
+> cp /keepalived/etc/sysconfig/keepalived /etc/sysconfig/
+
+复制启动脚本到/etc/init.d下
+> cd /keepalived-1.3.4
+> cp ./keepalived/etc/init.d/keepalived /etc/init.d/
+> chmod 755 /etc/init.d/keepalived

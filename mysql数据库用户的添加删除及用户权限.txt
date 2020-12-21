@@ -1,0 +1,200 @@
+一些主要命令
+
+登陆：mysql -u username -p 
+一般都是：mysql -u root -p  密码   也可以：mysql -uroot -p 密码
+
+查看有哪些数据库
+show  databases;
+
+使用某一个数据库
+use  databasename；  注意；一般对于某个数据库的操作，要基于这个数据库操作
+
+显示一个数据库的全部表
+show  tables；
+
+show可以看到很多东西：
+
+show create database dbname;     //这个可以看到创建数据库时用到的一些参数；
+show create table tablename;     //这个可以看到创建表时用到的一些参数
+
+退出
+quit
+
+删除数据库和数据表：
+
+mysql>drop database 数据库名;
+mysql>drop table 数据表名;
+
+用户相关：
+查看所有用户：
+SELECT DISTINCT CONCAT('User: ''',user,'''@''',host,''';') AS query FROM mysql.user;
+select user,host from mysql.user;
+
+1 mysql用户的添加
+新建用户：
+
+CREATE USER 'admin'@'localhost' IDENTIFIED BY 'admin'; 
+
+MySQL [(none)]> CREATE USER 'admin'@'localhost' IDENTIFIED BY 'admin';
+Query OK, 0 rows affected (0.01 sec)
+
+为用户授权：
+
+格式：
+grant 权限 on 数据库.* to username@登录主机 identified by "password";
+
+ 例子：
+我这里只有一个test_db数据库！
+grant all privileges on test_db.* to admin@localhost identified by 'admin';
+
+    MySQL [(none)]> grant all privileges on test_db.* to admin@localhost identified by 'admin';
+    Query OK, 0 rows affected, 2 warnings (0.01 sec)
+
+然后需要运行刷新权限的命令：
+flush privileges;
+
+    MySQL [(none)]> flush privileges;
+    Query OK, 0 rows affected (0.00 sec)
+	
+1、在linux中首先登入mysql：mysql -u root -p（提示输入密码，输入即可） 
+
+2、选择mysql数据库：use mysql。
+
+   在mysql表中插入系统的用户名和用户密码：
+
+   直接将用户插入到数据库中
+insert into user(Host,User,Password) values("localhost","你的用户名"，password("你要设置的密码"));
+
+3、刷新mysql系统相关的表:flush privileges;
+
+4、给新增的用户添加管理数据库的所有权限：
+
+grant all on 数据库.数据库表（用*表示对应数据库下面所有的表格） to 用户名称;
+
+
+
+备忘录：
+
+grant select,insert,update,delete,create,drop on vtdc.employee to joe@10.163.225.87 identified by ‘123′;
+
+是指用户joe能够从ip为10.163.225.87的主机上使用密码123来登录并对数据库vtdc对应的表employee实行 select,insert,update,delete,create,drop操作。
+
+ip地址可以自由限制，或者不限制就改为*。
+
+权限都有select,insert,update,delete,create,drop,index,alter,grant,references,reload,shutdown,process,file14个权限，当要所有的权限是直接改为grant all privileges on。
+
+	
+	
+	
+这个时候牵扯到一个问题：如何查看用户权限？来确认我是否已经修改成功了呢？
+MySQL查看用户权限命令的两种方法：
+
+一：使用MySQL grants
+
+命令：show grants for username@localhost;
+
+
+MySQL [(none)]> show grants for admin@localhost;                              
+| Grants for admin@localhost                                |
++-----------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'admin'@'localhost'                 |
+| GRANT ALL PRIVILEGES ON `testDB`.* TO 'admin'@'localhost' |
++-----------------------------------------------------------+
+2 rows in set (0.00 sec)
+二：直接通过MySQL select查询语句
+
+注：这里用到的还是上文说的 mysql.user 表
+
+命令：select * from mysql.user where user='username' and host='localhost（根据自己情况）' \G;
+
+ 
+
+MySQL [(none)]> select * from mysql.user where user='admin' and host='localhost' \G;
+*************************** 1. row ***************************
+                  Host: localhost
+                  User: admin
+           Select_priv: N
+           Insert_priv: N
+           Update_priv: N
+           Delete_priv: N
+           Create_priv: N
+             Drop_priv: N
+           Reload_priv: N
+         Shutdown_priv: N
+          Process_priv: N
+             File_priv: N
+            Grant_priv: N
+       References_priv: N
+            Index_priv: N
+            Alter_priv: N
+          Show_db_priv: N
+            Super_priv: N
+ Create_tmp_table_priv: N
+      Lock_tables_priv: N
+          Execute_priv: N
+       Repl_slave_priv: N
+      Repl_client_priv: N
+      Create_view_priv: N
+        Show_view_priv: N
+   Create_routine_priv: N
+    Alter_routine_priv: N
+      Create_user_priv: N
+            Event_priv: N
+          Trigger_priv: N
+Create_tablespace_priv: N
+              ssl_type:
+            ssl_cipher:
+           x509_issuer:
+          x509_subject:
+         max_questions: 0
+           max_updates: 0
+       max_connections: 0
+  max_user_connections: 0
+                plugin: mysql_native_password
+ authentication_string: *4ACFE3202A5FF5CF467898FC58AAB1D615029441
+      password_expired: N
+ password_last_changed: 2017-12-22 16:35:52
+     password_lifetime: NULL
+        account_locked: N
+1 row in set (0.00 sec)
+
+可以看到Select_priv,Insert_priv,Update_priv...等为N表示没有权限,该用户权限一目了然。
+ 
+  
+继续咱们的为用户授予权限，现在我们为用户授予部分权限：
+
+mysql>grant select,insert,update,delete,create,drop on test_db.user to admin@10.163.225.87 identified by ‘123′；
+
+给来自10.163.225.87的用户admin分配可对数据库test_db的user表进行select,insert,update,delete,create,drop等操作的权限，并设定口令为123。
+
+mysql>grant all privileges on test_db.* to admin@10.10.10.87 identified by ‘123′；
+
+给来自10.163.225.87的用户admin分配可对数据库test_db所有表进行所有操作的权限，并设定口令为123。
+
+ 
+mysql>grant all privileges on *.* to admin@10.10.10.87 identified by ‘123′；
+
+给来自10.163.225.87的用户admin分配可对所有数据库的所有表进行所有操作的权限，并设定口令为123
+
+
+mysql>grant all privileges on *.* to admin@localhost identified by ‘123′；
+
+给本机用户admin分配可对所有数据库的所有表进行所有操作的权限，并设定口令为123。
+
+
+删除用户：
+@>mysql -u root -p
+　　@>密码
+　　mysql>DELETE FROM mysql.user WHERE User="admin"
+　　mysql>flush privileges;
+
+　　//删除用户的数据库
+　　mysql>drop database test_db;
+
+
+修改指定用户密码：
+　　@>mysql -u root -p
+　　@>密码
+　　mysql>update mysql.user set password=password('新密码')  where User=”jeecn” and Host="localhost";
+　　mysql>flush privileges;
+ mysql>quit;

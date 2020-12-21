@@ -1,0 +1,8 @@
+（一）Linux下Oracle 11gR2安装部署参考以下文章
+
+https://www.linuxidc.com/Linux/2019-03/157531.htm
+问题：安装到68%的时候会停在linking text executables时，按回车 enter就可以
+
+（二）oracle 11g创建数据库教程
+
+https://www.cnblogs.com/lsdb/p/6523626.html

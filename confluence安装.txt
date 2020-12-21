@@ -1,0 +1,50 @@
+安装主要参考以下两博客
+https://blog.51cto.com/m51cto/2131964   数据库mysql  mysql -uroot -p'kans123QWE' -e "create database jira default character set utf8 collate utf8_bin;grant all on jira.* to 'jira@’%' identified by 'jirapasswd';"
+https://blog.csdn.net/weixin_42646511/article/details/80975471   数据库postgresql 默认支持它
+
+下载confluence破解包,破解包需要java来运行
+https://www.lanzous.com/i19po4d 密码:2zgh
+
+
+此时别着急粘贴到刚刚的web页面中，还有后续操作：
+接下来我们把刚刚导出来改名并使用注册机注册的jar包导会centos7中，并把名字改为原来的名字
+
+并重启confluence：
+sh /opt/atlassian/confluence/bin/stop-confluence.sh
+sh /opt/atlassian/confluence/bin/start-confluence.sh
+
+注意事项
+1 破解完生成授权码，将文件上传bin目下，将原来文件移除到其它目录，方便恢复。然后重启下confluence，再将授权码拷贝进去，下一步
+2 安装postgresql，9.6.xx支持。
+  安装数据库，添加用户，创建数据库、授权等参考以下博客
+  https://www.cnblogs.com/wang50902/p/11817108.html
+  #创建用户和密码
+  postgres=# create user wang01 with password '123456';
+  CREATE ROLE
+  #创建数据库，基于用户wang01
+  postgres=# create database test01 owner wang01;
+  CREATE DATABE
+  #授权用户
+  postgres=# grant all privileges on database test01 to wang01;
+  GRANT
+  #查看结果
+  postgres=# \l
+3 代理问题，最好在安装confluence代理，参考下面链接
+https://confluence.atlassian.com/confkb/how-to-use-nginx-to-proxy-requests-for-confluence-313459790.html
+
+升级confluence 将包放到opt目录下，重新安装
+
+   
+ ————————————————————————————————————————————————————————————————————————————————————————————————————————————————  
+特别注意   
+ ————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+confluence和jira结合用会更好
+
+jira安装
+参考以下链接
+https://www.cnblogs.com/houchaoying/p/9096118.html
+
+安装过程和数据链接都和confluence一样
+
+ 
+   

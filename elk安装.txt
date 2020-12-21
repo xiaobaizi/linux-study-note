@@ -1,0 +1,4 @@
+一 安装elk参考：
+https://www.cnblogs.com/hanyifeng/p/5509985.html
+elk安装包下载：
+https://www.elastic.co/cn/downloads/

@@ -1,0 +1,314 @@
+前言
+Docker 可以让开发者打包他们的应用以及依赖包到一个轻量级、可移植的容器中，然后发布到任何流行的 Linux 机器上，也可以实现虚拟化。
+容器是完全使用沙箱机制，相互之间不会有任何接口（类似 iPhone 的 app）,更重要的是容器性能开销极低。
+（一）
+Docker的应用场景
+
+Web 应用的自动化打包和发布。
+自动化测试和持续集成、发布。
+在服务型环境中部署和调整数据库或其他的后台应用。
+从头编译或者扩展现有的 OpenShift 或 Cloud Foundry 平台来搭建自己的 PaaS 环境。
+
+Docker 架构
+Docker 包括三个基本概念:
+
+镜像（Image）：Docker 镜像（Image），就相当于是一个 root 文件系统。比如官方镜像 ubuntu:16.04 就包含了完整的一套 Ubuntu16.04 最小系统的 root 文件系统。
+容器（Container）：镜像（Image）和容器（Container）的关系，就像是面向对象程序设计中的类和实例一样，镜像是静态的定义，容器是镜像运行时的实体。容器可以被创建、启动、停止、删除、暂停等。
+仓库（Repository）：仓库可看着一个代码控制中心，用来保存镜像。
+
+安装
+yum remove docker \
+                  docker-client \
+                  docker-client-latest \
+                  docker-common \
+                  docker-latest \
+                  docker-latest-logrotate \
+                  docker-logrotate \
+                  docker-engine
+				  
+安装 Docker Engine-Community
+使用 Docker 仓库进行安装
+在新主机上首次安装 Docker Engine-Community 之前，需要设置 Docker 仓库。之后，您可以从仓库安装和更新 Docker。
+
+设置仓库
+
+安装所需的软件包。yum-utils 提供了 yum-config-manager ，并且 device mapper 存储驱动程序需要 device-mapper-persistent-data 和 lvm2。
+
+$ sudo yum install -y yum-utils \
+  device-mapper-persistent-data \
+  lvm2
+使用以下命令来设置稳定的仓库。
+
+$ sudo yum-config-manager \
+    --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo
+安装 Docker Engine-Community
+安装最新版本的 Docker Engine-Community 和 containerd，或者转到下一步安装特定版本：
+
+$ sudo yum install docker-ce docker-ce-cli containerd.io				  
+
+
+systemctl start docker
+systemctl enable docker 
+
+
+运行交互式的容器
+
+我们通过 docker 的两个参数 -i -t，让 docker 运行的容器实现"对话"的能力：
+runoob@runoob:~$ docker run -i -t ubuntu:15.10 /bin/bash
+root@0123ce188bd8:/#
+各个参数解析：
+-t: 在新容器内指定一个伪终端或终端。
+-i: 允许你对容器内的标准输入 (STDIN) 进行交互。
+注意第二行 root@0123ce188bd8:/#，此时我们已进入一个 ubuntu15.10 系统的容器
+我们尝试在容器中运行命令 cat /proc/version和ls分别查看当前系统的版本信息和当前目录下的文件列表
+root@0123ce188bd8:/#  cat /proc/version
+Linux version 4.4.0-151-generic (buildd@lgw01-amd64-043) (gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.10) ) #178-Ubuntu SMP Tue Jun 11 08:30:22 UTC 2019
+root@0123ce188bd8:/# ls
+bin  boot  dev  etc  home  lib  lib64  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+root@0123ce188bd8:/# 
+我们可以通过运行 exit 命令或者使用 CTRL+D 来退出容器。
+root@0123ce188bd8:/#  exit
+exit
+root@runoob:~# 
+启动容器（后台模式）
+runoob@runoob:~$ docker run -d ubuntu:15.10 /bin/sh -c "while true; do echo hello world; sleep 1; done"
+2b1b7a428627c51ab8810d541d759f072b4fc75487eed05812646b8534a2fe63
+在输出中，我们没有看到期望的 "hello world"，而是一串长字符
+2b1b7a428627c51ab8810d541d759f072b4fc75487eed05812646b8534a2fe63
+这个长字符串叫做容器 ID，对每个容器来说都是唯一的，我们可以通过容器 ID 来查看对应的容器发生了什么。
+首先，我们需要确认容器有在运行，可以通过 docker ps 来查看：
+
+runoob@runoob:~$ docker ps
+CONTAINER ID        IMAGE                  COMMAND              ...  
+5917eac21c36        ubuntu:15.10           "/bin/sh -c 'while t…"    ...
+
+输出详情介绍：
+
+CONTAINER ID: 容器 ID。
+IMAGE: 使用的镜像。
+COMMAND: 启动容器时运行的命令。
+CREATED: 容器的创建时间。
+STATUS: 容器状态。
+状态有7种：
+
+created（已创建）
+restarting（重启中）
+running（运行中）
+removing（迁移中）
+paused（暂停）
+exited（停止）
+dead（死亡）
+
+PORTS: 容器的端口信息和使用的连接类型（tcp\udp）。
+NAMES: 自动分配的容器名称。
+在宿主主机内使用 docker logs 命令，查看容器内的标准输出：
+runoob@runoob:~$ docker logs 2b1b7a428627
+
+
+
+（二）
+docker 基本命令
+
+1 查看运行容器的运行情况
+docker stats  容器  id
+2 下载docker镜像
+docker pull ubuntu
+3 启动一个容器
+docker run -it ubuntu /bin/bash
+
+参数说明：
+-i: 交互式操作。
+-t: 终端。
+ubuntu: ubuntu 镜像。
+/bin/bash：放在镜像名后的是命令，这里我们希望有个交互式 Shell，因此用的是 /bin/bash。
+4 查看所有容器
+ docker ps -a
+5 启动一个已停止的容器
+docker start b750bbbcfd88 
+6 后台运行
+docker run -itd --name ubuntu-test ubuntu /bin/bash
+docker run --name  myphp-fpm -v ~/nginx/www:/www  -d php:5.6-fpm
+参数说明：
+-v ~/nginx/www:/www : 将主机中项目的目录 www 挂载到容器的 /www
+-d  后台运行方式
+7 停止一个已启动的容器
+docker stop 容器 ID
+8 重启一个容器
+docker restart <容器 ID>
+9 进去已启动的容器
+docker attach  容器  id   退出容器终端是，会导致容器停止
+docker exec -it 容器id 推荐大家使用 docker exec 命令，因为此退出容器终端，不会导致容器的停止。
+10 导出本地某个容器
+docker export 1e560fca3906 > ubuntu.tar
+11 从容器快照文件中再导入为镜像，以下实例将快照文件 ubuntu.tar 导入到镜像 test/ubuntu:v1:
+cat docker/ubuntu.tar | docker import - test/ubuntu:v1
+12 删除容器
+docker rm -f 1e560fca3906
+运行一个 web 应用
+我们将在docker容器中运行一个 Python Flask 应用来运行一个web应用。
+docker pull training/webapp  # 载入镜像
+docker run -d -P training/webapp python app.py
+参数说明:
+-d:让容器在后台运行。
+-P:将容器内部使用的网络端口映射到我们使用的主机上
+13 来查看容器端口的映射情况。
+ docker port bf08b7f2cd89
+ 14  查看已运行的容器日志
+  docker logs -f bf08b7f2cd89
+ -f: 让 docker logs 像使用 tail -f 一样来输出容器内部的标准输出。
+ 15 使用 docker top 来查看容器内部运行的进程
+docker top wizardly_chandrasekhar
+ 16 docker inspect 来查看 Docker 的底层信息
+ docker inspect wizardly_chandrasekhar
+ 
+ 17 查看本地镜像
+ docker  images
+ 18 查找镜像
+ docker search httpd
+ 
+NAME: 镜像仓库源的名称
+DESCRIPTION: 镜像的描述
+OFFICIAL: 是否 docker 官方发布
+stars: 类似 Github 里面的 star，表示点赞、喜欢的意思。
+AUTOMATED: 自动构建。
+ 19 删除镜像
+ docker rmi hello-world
+ 20  创建镜像
+当我们从 docker 镜像仓库中下载的镜像不能满足我们的需求时，我们可以通过以下两种方式对镜像进行更改。
+1、从已经创建的容器中更新镜像，并且提交这个镜像
+2、使用 Dockerfile 指令来创建一个新的镜像
+21 更新镜像
+docker run -t -i ubuntu:15.10 /bin/bash
+在运行的容器内使用 apt-get update 命令进行更新。
+在完成操作之后，输入 exit 命令来退出这个容器。
+通过命令 docker commit 来提交容器副本
+docker commit -m="has update" -a="runoob" e218edb10161 runoob/ubuntu:v2
+
+各个参数说明：
+-m: 提交的描述信息
+-a: 指定镜像作者
+e218edb10161：容器 ID
+runoob/ubuntu:v2: 指定要创建的目标镜像名
+22 构建镜像
+我们使用命令 docker build ， 从零开始来创建一个新的镜像。为此，我们需要创建一个 Dockerfile 文件，其中包含一组指令来告诉 Docker 如何构建我们的镜像。
+runoob@runoob:~$ cat Dockerfile 
+FROM    centos:6.7
+MAINTAINER      Fisher "fisher@sudops.com"
+
+RUN     /bin/echo 'root:123456' |chpasswd
+RUN     useradd runoob
+RUN     /bin/echo 'runoob:123456' |chpasswd
+RUN     /bin/echo -e "LANG=\"en_US.UTF-8\"" >/etc/default/local
+EXPOSE  22
+EXPOSE  80
+CMD     /usr/sbin/sshd -D
+
+每一个指令都会在镜像上创建一个新的层，每一个指令的前缀都必须是大写的。
+第一条FROM，指定使用哪个镜像源
+RUN 指令告诉docker 在镜像内执行命令，安装了什么。。。
+然后，我们使用 Dockerfile 文件，通过 docker build 命令来构建一个镜像
+
+ docker build -t runoob/centos:6.7 .
+ 参数说明：
+-t ：指定要创建的目标镜像名
+. ：Dockerfile 文件所在目录，可以指定Dockerfile 的绝对路径
+23 设置镜像标签
+docker tag 860c279d2fec runoob/centos:dev
+docker tag 镜像ID，这里是 860c279d2fec ,用户名称、镜像源名(repository name)和新的标签名(tag)。
+
+
+（三）Docker 容器连接
+新建网络
+下面先创建一个新的 Docker 网络。
+$ docker network create -d bridge test-net
+24 查看docker网络
+docker  network  ls
+25 连接容器
+运行一个容器并连接到新建的 test-net 网络:
+docker run -itd --name test1 --network test-net ubuntu /bin/bash
+docker run -itd --name test2 --network test-net ubuntu /bin/bash
+下面通过 ping 来证明 test1 容器和 test2 容器建立了互联关系。
+如果 test1、test2 容器内中无 ping 命令，则在容器内执行以下命令安装 ping（即学即用：可以在一个容器里安装好，提交容器到镜像，在以新的镜像重新运行以上俩个容器）。
+apt-get update
+apt install iputils-ping
+docker  exec -it test1 /bin/bsah
+ping  test2
+docker exec -it test2 /bin/bash
+
+配置 DNS 
+我们可以在宿主机的 /etc/docker/daemon.json 文件中增加以下内容来设置全部容器的 DNS：
+{
+  "dns" : [
+    "114.114.114.114",
+    "8.8.8.8"
+  ]
+}
+设置后，启动容器的 DNS 会自动配置为 114.114.114.114 和 8.8.8.8。
+配置完，需要重启 docker 才能生效。
+查看容器的 DNS 是否生效可以使用以下命令，它会输出容器的 DNS 信息：
+docker run -it --rm ubuntu  cat etc/resolv.conf
+
+（四）Docker Dockerfile  制定镜像
+
+1 FROM：定制的镜像都是基于 FROM 的镜像，这里的 nginx 就是定制需要的基础镜像。后续的操作都是基于 nginx。
+
+2 RUN：用于执行后面跟着的命令行命令。有以下俩种格式：
+
+shell 格式：
+
+RUN <命令行命令>
+# <命令行命令> 等同于，在终端操作的 shell 命令。
+exec 格式：
+
+RUN ["可执行文件", "参数1", "参数2"]
+# 例如：
+# RUN ["./test.php", "dev", "offline"] 等价于 RUN ./test.php dev offline
+
+3 COPY
+复制指令，从上下文目录中复制文件或者目录到容器里指定路径。
+格式：
+COPY [--chown=<user>:<group>] <源路径1>...  <目标路径
+COPY [--chown=<user>:<group>] ["<源路径1>",...  "<目标路径>"]
+
+4 ADD
+ADD 指令和 COPY 的使用格式一致（同样需求下，官方推荐使用 COPY）。功能也类似，不同之处如下：
+ADD 的优点：在执行 <源文件> 为 tar 压缩文件的话，压缩格式为 gzip, bzip2 以及 xz 的情况下，会自动复制并解压到 <目标路径>。
+ADD 的缺点：在不解压的前提下，无法复制 tar 压缩文件。会令镜像构建缓存失效，从而可能会令镜像构建变得比较缓慢。具体是否使用，可以根据是否需要自动解压来决定。
+
+5 CMD
+类似于 RUN 指令，用于运行程序，但二者运行的时间点不同:
+CMD 在docker run 时运行。
+RUN 是在 docker build。
+作用：为启动的容器指定默认要运行的程序，程序运行结束，容器也就结束。CMD 指令指定的程序可被 docker run 命令行参数中指定要运行的程序所覆盖。
+
+6  ENTRYPOINT
+类似于 CMD 指令，但其不会被 docker run 的命令行参数指定的指令所覆盖，而且这些命令行参数会被当作参数送给 ENTRYPOINT 指令指定的程序。
+但是, 如果运行 docker run 时使用了 --entrypoint 选项，此选项的参数可当作要运行的程序覆盖 ENTRYPOINT 指令指定的程序。
+优点：在执行 docker run 的时候可以指定 ENTRYPOINT 运行所需的参数。
+
+7 ENV
+设置环境变量，定义了环境变量，那么在后续的指令中，就可以使用这个环境变量。
+
+8 ARG
+构建参数，与 ENV 作用一至。不过作用域不一样。ARG 设置的环境变量仅对 Dockerfile 内有效，也就是说只有 docker build 的过程中有效，构建好的镜像内不存在此环境变量。
+
+9 VOLUME
+定义匿名数据卷。在启动容器时忘记挂载数据卷，会自动挂载到匿名卷。
+
+10  EXPOSE
+仅仅只是声明端口。
+
+11 WORKDIR
+指定工作目录。用 WORKDIR 指定的工作目录，会在构建镜像的每一层中都存在。（WORKDIR 指定的工作目录，必须是提前创建好的）。
+docker build 构建镜像过程中的，每一个 RUN 命令都是新建的一层。只有通过 WORKDIR 创建的目录才会一直存在。
+ 12 USER
+用于指定执行后续命令的用户和用户组，这边只是切换后续命令执行的用户（用户和用户组必须提前已经存在）。
+
+13 HEALTHCHECK
+用于指定某个程序或者指令来监控 docker 容器服务的运行状态。
+
+ 14 ONBUILD
+用于延迟构建命令的执行。简单的说，就是 Dockerfile 里用 ONBUILD 指定的命令，在本次构建镜像的过程中不会执行（假设镜像为 test-build）。当有新的 Dockerfile 使用了之前构建的镜像 FROM test-build ，这是执行新镜像的 Dockerfile 构建时候，会执行 test-build 的 Dockerfile 里的 ONBUILD 指定的命令。
+你 
+

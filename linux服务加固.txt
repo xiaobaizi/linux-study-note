@@ -1,0 +1,60 @@
+（一） 设置密码失效时间 
+先查看密码过期时间，现在是90天   
+chage -l testuser
+Last password change     : Jul 10, 2017
+Password expires     : Oct 08, 2018
+Password inactive     : never
+Account expires     : never
+Minimum number of days between password change     : 0
+Maximum number of days between password change     : 90
+Number of days of warning before password expires    : 10
+
+chage：密码失效是通过此命令来管理的。
+ 
+　　参数意思：
+　　-m 密码可更改的最小天数。为零时代表任何时候都可以更改密码。
+　　-M 密码保持有效的最大天数。
+　　-W 用户密码到期前，提前收到警告信息的天数。
+　　-E 帐号到期的日期。过了这天，此帐号将不可用。
+　　-d 上一次更改的日期
+　　-I 停滞时期。如果一个密码已过期这些天，那么此帐号将不可用。
+　　-l 例出当前的设置。由非特权用户来确定他们的密码或帐号何时过期。
+翻译：
+chage -l test      #查看用户密码设定情况
+最近一次密码修改时间                                    ：  4月 27, 2018
+密码过期时间                                    ： 从不
+密码失效时间                                    ： 从不
+帐户过期时间                                            ： 从不
+两次改变密码之间相距的最小天数          ：-1
+两次改变密码之间相距的最大天数          ：-1
+在密码过期之前警告的天数        ：-1
+chage -M 90 test        #密码有效期90天
+chage -d 0 test       #强制用户登陆时修改口令
+chage -d 0 -m 0 -M 90 -W 15 test   #强制用户下次登陆时修改密码，并且设置密码最低有效期0和最高有限期90，提前15天发警报提示
+chage -E '2014-09-30' test  # test这个账号的有效期是2014-09-30
+ 
+ 
+ vim /etc/login.defs
+PASS_MAX_DAYS   60 密码过期时间60天，自行设置
+PASS_MIN_DAYS   0  密码修改天数
+PASS_MIN_LEN    5  密码长度
+PASS_WARN_AGE   7  密码过期前提示
+
+阿里云建议
+加固建议
+
+使用非密码登陆方式如密钥对，请忽略此项。在 /etc/login.defs中将 PASS_MAX_DAYS 参数设置为 60-180之间，如:
+
+PASS_MAX_DAYS 90
+需同时执行命令设置root密码失效时间：
+
+chage --maxdays 90 root
+操作时建议做好记录或备份
+（二） 设置SSH空闲超时退出时间 
+加固建议
+
+编辑/etc/ssh/sshd_config，将ClientAliveInterval 设置为300到900，即5-15分钟，将ClientAliveCountMax设置为0-3之间。
+
+ClientAliveInterval 600
+ClientAliveCountMax 2
+操作时建议做好记录或备份

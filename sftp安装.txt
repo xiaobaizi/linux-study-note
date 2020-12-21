@@ -1,0 +1,148 @@
+安装sftp
+
+groupadd group1
+
+chmod 0755 /test/
+useradd -g group1 -d /test/backend/ -M test_backend
+usermod -s /sbin/nologin test_backend
+passwd test_backend
+xxxxxxxx
+
+
+useradd -g group1 -d /test/api/ -M test_api
+usermod -s /sbin/nologin test_api
+passwd test_api
+xxxxxx
+
+useradd -g group1 -d /test/business/ -M test_business
+usermod -s /sbin/nologin test_business
+passwd test_business
+xxxxxx
+
+
+vi /etc/ssh/sshd_config
+
+
+UseDNS no
+AddressFamily inet
+SyslogFacility AUTHPRIV
+PermitRootLogin yes
+PasswordAuthentication yes
+
+# override default of no subsystems
+# Subsystem sftp /usr/libexec/openssh/sftp-server
+Subsystem sftp internal-sftp
+
+Match User test_backend
+ChrootDirectory /test/backend
+X11Forwarding no
+AllowTcpForwarding no
+ForceCommand internal-sftp
+Match User test_api
+ChrootDirectory /test/api
+X11Forwarding no
+AllowTcpForwarding no
+ForceCommand internal-sftp
+Match User test_business
+ChrootDirectory /test/business
+X11Forwarding no
+AllowTcpForwarding no
+ForceCommand internal-sftp
+
+systemctl restart sshd
+
+ 
+
+这里有几点
+
+1、主目录的所有者必须为root
+
+即 chown root:root /test
+
+2、权限为chmod 755 /test
+
+3、要想让sftp修改子目录，只能创建子目录来设置权限
+
+mkdir /test/api/project01
+
+chown test_api:group1 /test/api/project01
+
+chmod 755 /test/api/project01
+
+
+
+
+LogLevel INFO       #日志添加 info等级
+# Example of overriding settings on a per-user basis
+#Match User anoncvs
+#       X11Forwarding no
+#       AllowTcpForwarding no
+#       PermitTTY no
+#       ForceCommand cvs server
+
+UseDNS no
+AddressFamily inet
+SyslogFacility AUTHPRIV
+PermitRootLogin yes
+PasswordAuthentication yes
+
+
+
+Subsystem sftp internal-sftp -l INFO -f local5
+UsePAM yes
+Match User qyhwkj
+           ChrootDirectory /data/sftp/qyhwkj/
+           ForceCommand internal-sftp -l INFO -f local5
+           AllowTcpForwarding no
+           X11Forwarding no
+
+
+groupadd sftp
+useradd -g sftp -s /sbin/nologin -M qyhwkj
+passwd qyhwkj
+mkdir /data/sftp/qyhwkj
+mkdir -p /data/sftp/qyhwkj
+usermod -d /data/sftp/qyhwkj  qyhwkj
+vim /etc/ssh/sshd_config 
+
+LogLevel INFO       #日志添加 info等级
+# Example of overriding settings on a per-user basis
+#Match User anoncvs
+#       X11Forwarding no
+#       AllowTcpForwarding no
+#       PermitTTY no
+#       ForceCommand cvs server
+
+UseDNS no
+AddressFamily inet
+SyslogFacility AUTHPRIV
+PermitRootLogin yes
+PasswordAuthentication yes
+
+
+
+Subsystem sftp internal-sftp -l INFO -f local5    # -l INFO -f local5 添加日志
+UsePAM yes
+Match User qyhwkj
+           ChrootDirectory /data/sftp/qyhwkj/
+           ForceCommand internal-sftp -l INFO -f local5  # -l INFO -f local5  添加日志记录操作日志
+           AllowTcpForwarding no
+           X11Forwarding no
+		   
+chown root:sftp /data/sftp/qyhwkj
+chown 755 /data/sftp/qyhwkj
+mkdir /data/sftp/qyhwkj/upload
+chown sftps:sftp /data/sftp/qyhwkj/upload
+chmod 755 /data/sftp/sftps/upload/
+vim /etc/rsyslog.conf                             #配置日志文件，添加日志目录
+auth,authpriv.*,local5.* /var/log/sftp.log
+
+systemctl restart sshd
+systemctl restart rsyslog
+
+sftp qyhwkj@127.0.0.1                              #登录sftp
+
+#添加两个目录分别给不同的权限
+mkdir 1              #qyhwkj只读
+mdkir 2              #qyhwkj 读写
+chown -R qyhwkj:sftp 2

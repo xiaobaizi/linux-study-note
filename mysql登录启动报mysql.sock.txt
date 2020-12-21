@@ -1,0 +1,22 @@
+解决ERROR 2002 (HY000): Can't connect to local MySQL server through socket '/tmp/mysql.sock' (2)
+
+
+在终端输入mysql -uroot -p123456登录数据库总是报这样的错，很烦。
+
+在网上查了一下，没有得到解决，可能每个人遇到的问题原因不一样，
+
+此时我就想看一下/tmp/mysql.sock这个文件，但是在/tmp/目录下没有找到此文件，
+
+我想可能就是缺少这种文件导致的，于是搜索mysql.sock此文件，发现在/var/lib/mysql/mysql.sock，
+
+于是建立一个软连接：
+
+ 
+
+ln -s /var/lib/mysql/mysql.sock /tmp/mysql.sock
+ln -s /var/lib/mysql/mysql.sock /tmp/mysql.sock
+ 
+
+在终端输入mysql -uroot -p123456，启动正常。
+
+当然最快捷的还是查看/etc/my.conf,里面含有mysqld的socket路径，直接用其建立软连接就可以了。

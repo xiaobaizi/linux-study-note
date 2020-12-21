@@ -1,0 +1,40 @@
+一、增量备份
+1、新建backup目录，里面新建file1,file2,file3文件
+
+mkdir backup/
+touch backup/{file1,file2,file3}
+2、进行完整备份
+
+tar -g tarinfo -czf backup-full.tar.gz backup/
+3、新增文件到backup
+
+touch backup/file4
+4、进行增量备份
+
+tar -g tarinfo -czf backup-incre1.tar.gz backup/
+5、查看增量备份文件
+
+tar -ztf backup-incre1.tar.gz
+二、进行还原
+1、删除backup目录
+
+rm -rf backup/
+2、执行还原操作
+
+tar xzf backup-full.tar.gz
+tar xzf backup-incre1.tar.gz
+
+
+二  linux tar打包压缩排除某个目录或文件
+命令格式如下：
+tar -zcvf xxx.tar.gz   要打包的目录  --exclude=dir1   --exclude=file1  ......
+
+附：
+
+tar -zcvf afish.tar.gz * --exclude=file1 --exclude=dir1
+注意：
+
+1、--exclude=file1 而不是 --exclude file1
+2、要排除一个目录是 --exclude=dir1，而不是 --exclude=dir1/
+也可以在父目录打包
+tar -zcvf afish.tar.gz pardir --exclude=pardir/file1 --exclude=pardir/dir1

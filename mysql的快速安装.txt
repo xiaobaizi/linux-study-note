@@ -1,0 +1,39 @@
+阿里云centos7使用yum安装mysql的正确姿势
+
+yum快速安装mysql
+
+新增yum源
+
+rpm -Uvh http://dev.mysql.com/get/mysql-community-release-el7-5.noarch.rpm
+
+查看可用的mysql版本（直接略过）
+
+yum repolist enabled | grep "mysql.*-community.*"
+
+导入
+
+yum -y install mysql-community-server
+
+加入开机启动
+
+systemctl enable mysqld
+
+启动mysql
+
+systemctl start mysqld
+
+配置初始信息
+
+mysql_secure_installation
+
+可能会遇到启动没有权限，err log位置/var/lib/mysql/izwz97b179ej8k0x150aapz.err
+permission denied  权限拒绝错误
+没有权限,直接修改权限信息
+
+cd /var/lib/mysql/performance_schema
+
+chown mysql *
+
+chgrp mysql *
+
+重启OK

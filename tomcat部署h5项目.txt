@@ -1,0 +1,183 @@
+（一）tomcat部署h5 两种方式
+一  有后缀名
+在Tomcat的webapps目录下新建一个目录，比如demo
+然后把h5页面复制粘贴到demo目录里面
+然后启动Tomcat服务
+在浏览器输入localhost:8080/demo/h5的页面名
+这样即可访问
+ 二  是没有后缀
+ 1 tomcat jdk 都部署完成后
+ 2 将项目放到webapps下
+ 2.1、存放HTML页面
+写好的静态页面上传到服务器，自己创建文件夹（例：myhomepage/），放入Tomcat的webapps，（例如：../apache-tomcat-9.0.14/webapps/myhomepage/index.html）
+
+ 2.2、修改Tomcat的配置项
+找到 ../apache-tomcat-9.0.14/conf/server.xml 配置文件，修改server.xml文件
+
+vim ../apache-tomcat-9.0.14/conf/server.xml
+ 在 Host 标签里添加 Context 标签，给 docBase 附上你在 webapps 里添加的文件夹名称 myhomepage
+
+<Context path="" docBase="myhomepage" reloadable="false" />
+ 
+ 2.3、保存后，启动Tomcat
+sh apache-tomcat-9.0.14/bin/startup.sh
+ 2.4、验证是否部署成功
+http://服务器ip:端口/index.html
+参考文档：https://blog.csdn.net/u014259503/article/details/86665670
+（二）（1）一台服务器一个tomcat部署多个项目
+#注意这个是按照一个项目做的
+1 安装jdk 
+vim /etc/profile 最后添加
+
+export JAVA_HOME=/data/java/jdk1.8.0_181
+export CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar
+export PATH=$PATH:$JAVA_HOME/bin
+
+#####################################################################################
+cat /data/tomcat/conf/server.xml 
+
+<?xml version="1.0" encoding="UTF-8"?>
+#端口注意
+<Server port="8005" shutdown="SHUTDOWN">
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener" /> 
+  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+  <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener" />
+  <GlobalNamingResources>
+    <Resource name="UserDatabase" auth="Container"
+              type="org.apache.catalina.UserDatabase"
+              description="User database that can be updated and saved"
+              factory="org.apache.catalina.users.MemoryUserDatabaseFactory"
+              pathname="conf/tomcat-users.xml" />
+  </GlobalNamingResources>
+###########################################第一个项目
+  <Service name="Catalina">
+#这里端口需要修改成项目端口  
+    <Connector port="8081" protocol="HTTP/1.1"
+               connectionTimeout="20000"
+               redirectPort="8443" /> 
+########这里是可以注释的			   
+ <!--   <Connector port="8010" protocol="AJP/1.3" redirectPort="8443" /> -->
+	
+    <Engine name="Catalina" defaultHost="localhost">
+      <Realm className="org.apache.catalina.realm.LockOutRealm">
+        <Realm className="org.apache.catalina.realm.UserDatabaseRealm"
+               resourceName="UserDatabase"/>
+      </Realm>
+      <Host name="localhost"  appBase="webapps"
+            unpackWARs="true" autoDeploy="true">        
+        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
+               prefix="localhost_access_log" suffix=".txt"
+               pattern="%h %l %u %t &quot;%r&quot; %s %b" />
+        <Context path="" docBase="demo" reloadable="false" />
+     </Host>
+    </Engine>  
+  </Service>
+###########################################第二个项目 
+  <Service name="Catalina">
+#这里端口需要修改成项目端口    
+    <Connector port="8000" protocol="HTTP/1.1"
+               connectionTimeout="20000"
+               redirectPort="8443" />
+########这里是可以注释的			   
+<!--	<Connector port="8010" protocol="AJP/1.3" redirectPort="8443" /> -->		   
+    <Engine name="Catalina" defaultHost="localhost">     
+      <Realm className="org.apache.catalina.realm.LockOutRealm">
+        <Realm className="org.apache.catalina.realm.UserDatabaseRealm"
+               resourceName="UserDatabase"/>
+      </Realm>
+#这里是tomcat中复制一个WebApps1
+      <Host name="localhost"  appBase="webapps1"
+            unpackWARs="true" autoDeploy="true">
+       
+        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
+               prefix="localhost_access_log" suffix=".txt"
+               pattern="%h %l %u %t &quot;%r&quot; %s %b" />
+      </Host>
+    </Engine>
+  </Service>
+</Server>
+
+
+#########################################################################################################
+#完整的server.xml文件
+<?xml version="1.0" encoding="UTF-8"?>
+#端口主要注意
+<Server port="8006" shutdown="SHUTDOWN">
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
+  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+  <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener" />
+  <GlobalNamingResources>
+    <Resource name="UserDatabase" auth="Container"
+              type="org.apache.catalina.UserDatabase"
+              description="User database that can be updated and saved"
+              factory="org.apache.catalina.users.MemoryUserDatabaseFactory"
+              pathname="conf/tomcat-users.xml" />
+  </GlobalNamingResources>
+#项目开头
+  <Service name="Catalina">
+#端口修改  
+    <Connector port="8081" protocol="HTTP/1.1"
+               connectionTimeout="20000"
+               redirectPort="8443" />
+#需要注意  
+    <Connector port="8010" protocol="AJP/1.3" redirectPort="8443" />
+
+    <Engine name="Catalina" defaultHost="localhost">
+      <Realm className="org.apache.catalina.realm.LockOutRealm">
+        <Realm className="org.apache.catalina.realm.UserDatabaseRealm"
+               resourceName="UserDatabase"/>
+      </Realm>
+      <Host name="localhost"  appBase="webapps"
+            unpackWARs="true" autoDeploy="true">   
+        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
+               prefix="localhost_access_log" suffix=".txt"
+               pattern="%h %l %u %t &quot;%r&quot; %s %b" />
+      </Host>
+    </Engine>
+  </Service>
+</Server>
+#########################################################################################################
+（2）一台服务器部署多个tomcat项目
+#只要修改没个tomcat端口就行
+<?xml version="1.0" encoding="UTF-8"?>
+#端口主要注意
+<Server port="8006" shutdown="SHUTDOWN">
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
+  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+  <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener" />
+  <GlobalNamingResources>
+    <Resource name="UserDatabase" auth="Container"
+              type="org.apache.catalina.UserDatabase"
+              description="User database that can be updated and saved"
+              factory="org.apache.catalina.users.MemoryUserDatabaseFactory"
+              pathname="conf/tomcat-users.xml" />
+  </GlobalNamingResources>
+#项目开头
+  <Service name="Catalina">
+#端口修改  
+    <Connector port="8081" protocol="HTTP/1.1"
+               connectionTimeout="20000"
+               redirectPort="8443" />
+#需要注意  
+    <Connector port="8010" protocol="AJP/1.3" redirectPort="8443" />
+
+    <Engine name="Catalina" defaultHost="localhost">
+      <Realm className="org.apache.catalina.realm.LockOutRealm">
+        <Realm className="org.apache.catalina.realm.UserDatabaseRealm"
+               resourceName="UserDatabase"/>
+      </Realm>
+      <Host name="localhost"  appBase="webapps"
+            unpackWARs="true" autoDeploy="true">   
+        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
+               prefix="localhost_access_log" suffix=".txt"
+               pattern="%h %l %u %t &quot;%r&quot; %s %b" />
+      </Host>
+    </Engine>
+  </Service>
+</Server>

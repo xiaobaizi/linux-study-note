@@ -1,0 +1,19 @@
+第一章   tomcat 介绍
+tomcat  目录详解
+bin 
+bin/startup.bat Windows下启动
+bin/shutdown.bat windows 下停止
+bin/startup.sh  Linux下的启动
+bin/shutdown.sh linux 下的停止
+conf
+conf/Catalina  用于存储针对每一个虚拟机的context配置
+conf/context.xml 用于定义所有web应用均需要加载的context配置，如果web应用制定了自己的context.xml，那么该文件的配置将被覆盖
+conf/catalina.properties  tomcat环境变量配置
+conf/catalina.policy  tomcat在安全模式下运行时，此文件为默认的安全策略配置
+conf/logging.properties  tomcat日志配置文件，修改tomcat日志 级别及日志路径等
+conf/server.xml   tomcat 服务器核心配置文件，用于配置tomcat的连接器，监听端口，处理请求的虚拟主机等
+conf/tomcat-users.xml  用于定义tomcat默认用户及角色映射信息
+lib  tomcat服务器依赖库目录，包含tomcat服务器运行环境依赖jar包
+logs tomcat默认的日志存放路径
+webapps     tomcat默认的web应用部署目录
+work        web应用jsp代码生成器和编译临时目录

@@ -1,0 +1,14 @@
+安装
+wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+yum install jenkins  -y 
+下载地址：https://www.jenkins.io/zh/download/
+systemctl start jenkins 
+问题处理，/usr/bin/java没有这个目录，然后将jenkins目录修改下就可以
+[root@centos]# systemctl daemon-reload
+[root@centos]# systemctl restart jenkins
+具体参考：https://www.jianshu.com/p/ed73f1f07682
+
+
+复制密码到浏览器框里
+[root@centos]# cat /var/lib/jenkins/secrets/initialAdminPassword

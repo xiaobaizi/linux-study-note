@@ -1,0 +1,128 @@
+数据备份
+一、数据备份方法及策略
+MySQL数据库最常用的备份方法如下：
+
+直接cp备份
+sqlhotcopy备份
+主从同步复制
+Mysqldump备份
+xtrabackup备份
+二、mysqldump备份
+通常小于100GB的MySQL数据库可以使用mysqldump备份工具进行备份，如果是超过100GB的数据，由于mysqldump备份方式采用的是逻辑备份，最大的缺陷是备份和恢复速度较慢。
+基于mysqldump备份耗时会比较长，而且备份期间会锁表，锁表直接导致数据库只能访问select，不能执行insert、update等操作，进而导致部分web应用无法写入新数据。
+
+如果数据库采用的是MyISAM引擎，可以执行参数--lock-tables=false禁用锁表，但是有可能造成数据信息不一致。
+
+如果是支持事务的表，例如InnoDB，--single-transaction参数不支持锁定表，具体使用为mysqldump -uroot -p123456 --all-databases --opt --single-tarnsaction > tt.sql,--opt选项可以让mysqldump快速导出数据，并且可以很快导回。该选项默认开启，但是可以使用--skip-opt禁用。
+如果运行mysqldump没有指定–quick或–opt选项，会将整个结果集中放在内存中，如果导出大数据的话可能会导致内存溢出而异常退出。
+
+三、xtrabackup备份
+MySQL冷备、mysqldump、MySQL热拷贝均不能实现对数据库进行增量备份。
+所以就出现了Percona-xtrabackup，xtrabackup主要有两个工具，分别为xtrabackup和innobackupex。
+
+xtrabackup只能备份InnoDB和xtraDB两种数据引擎的表，不能备份MyISAM数据表，innobackupex 1.5.1 封装了xtrabackup，是一个封装好的脚本，使用它可以同时备份处理innoDB和MyISAM，但处理MyISAM需要加一个读锁。
+
+xtrabackup备份原理： innobackupex在后台线程不断追踪InnoDB的日志文件，然后复制InnoDB的数据文件。复制完成后，日志的复制线程也会结束。这样就得到了不在同一个时间点的数据副本和开始备份以后的事务日志。完成后，就可以使用InnoDB崩溃恢复代码执行事务日志(redo log)，从而达到数据的一致型。
+
+备份优点为：
+
+备份速度快，物理备份更可靠
+备份过程不会打断正在执行的事务，无须锁表
+能够基于压缩等功能节约磁盘空间和流量
+自动备份校验
+还原速度快
+可以流传将备份传输到另外一台机器上
+节约磁盘空间和网络带宽
+innobackupex备份过程：首先启动xtrabackup_log后台检测的进程，实时检测MySQL redo的变化，一旦发现redo有新的日志写入，立刻将日志写入到日志文件xtrabackup_log中，并复制InnoDB的数据文件和系统表空间文件idbdatal到备份目录。innodb引擎表备份完之后，执行flush table with read lock操作进行MyISAM表备份。复制.frm .myd .myi文件，并且在这一时可获得binary log的位置，将表进行解锁unlock tables,停止xtraback_log进程，完成整个数据库的备份。
+
+四、Percona-xtrabackup备份
+1、官网下载安装
+这里直接下载的rpm包，因为这里为了方便，数据库直接用的yum源的rpm包安装的，所以mysql版本较低，percona-xtrabackup包也只能下版本较低的包。但也要注意percona-xtrabackup目前还不支持mysql 5.7版本，最多只能到5.6
+
+##安装依赖包
+yum -y install libaio perl perl-devel  perl-Time-HiRes perl-DBD-MySQL perl-IO-Socket-SSL perl-Digest-MD5 libev rsync  
+
+wget https://www.percona.com/downloads/XtraBackup/XtraBackup-2.0.1/RPM/rhel6/x86_64/percona-xtrabackup-2.0.1-446.rhel6.x86_64.rpm
+
+rpm -ivh percona-xtrabackup-22-2.2.13-1.el6.x86_64.rpm
+
+2、MySQL数据库全备份
+命令为innobackupex --user=root --password=Lcl@0514 /data/backup/mysql ##用户名和密码都是mysql设定的
+
+最后结果出现completed ok代表数据库全备份成功！
+
+3、innobackupex数据库恢复
+innobackupex数据库恢复，恢复前要先保证数据的一致性，执行命令为：innobackupex --defaults-file=/etc/my.cnf --user=root --password=Lcl@0514 --apply-log /data/backup/mysql/xxx
+
+通常数据库备份完成后，数据不能直接用于恢复操作，因为备份数据是一个过程，在备份过程中，有任务会写入数据，可能会包含尚未提交的事务或已经提交但并没有同步到数据文件的事务。
+所以数据文件会处于不一致的状态，基于--apply-log可以通过回滚未提交的事务及同步已经提交的事务到数据文件处于一致性状态，才可以进行恢复数据。
+apply-log过程可以在任何机器上进行，可以把备份复制在闲置的服务器上去运行，以此来降低备份库的压力，但必须保证backup和apply-log所使用的mysqlbackup版本一致
+
+4、恢复完整数据
+删除原数据目录的数据，使用--copy-back参数恢复完整数据，授权MySQL用户给所有的数据库文件
+
+##执行命令为
+
+rm -fr /var/lib/mysql/* 
+innobackupex --defaults-file=/etc/my.cnf --user=root --password=Lcl@0514 --copy-back /data/backup/mysql/xxx
+chown -R mysql:mysql /var/lib/mysql 
+
+##恢复完毕后，重启数据库，直接登录会发现数据库备份成功
+
+
+
+五、数据库增量备份
+增量备份只能应用于InnoDB或xtraDB表，对于MyISAM表而言，执行增量备份实际上执行的是完全备份。
+
+1、innobackupex增量备份
+（1）全备份
+增量备份之前必须执行全备份，这里用sql_db_test库来做测试，代码为
+innobackupex --user=root --password=Lcl@0514 --databases=sql_db_test /data/backup/mysql
+
+假设这一次备份出来的文件为/data/backup/mysql/aaa
+
+
+
+（2）第一次增量备份
+执行第一次增量备份，代码为
+innobackupex --defaults-file=/etc/my.cnf --user=root --password=Lcl@0514 --databases=sql_db_test --incremental /data/backup/mysql --incremental-basedir=/data/backup/mysql/aaa
+
+并且假设这次备份出来的文件名为bbb
+
+
+（3）数据库插入新数据
+
+
+（4）执行第二次增量备份
+执行第二次增量备份，代码为
+innobackupex --defaults-file=/etc/my.cnf --user=root --password=Lcl@0514 --databases=sql_db_test --incremental /data/backup/mysql --incremental-basedir=/data/backup/mysql/bbb
+
+假设这次备份出来的文件名为ccc
+
+
+2、MySQL增量备份的恢复
+（1）删除数据库
+删除原数据库中表及数据记录信息
+
+
+（2）确保数据一致性
+基于apply-log确保数据的一致性，代码为innobackupex --defaults-file=/etc/my.cnf --user=root --password=Lcl@0514 --apply-log --redo-only /data/backup/mysql/aaa
+
+
+（3）第一次增量数据恢复
+执行第一次增量数据恢复，代码为：innobackupex --defaults-file=/etc/my.cnf --user=root --password=Lcl@0514 --apply-log --redo-only /data/backup/mysql/aaa --incremental-dir=/data/backup/mysql/bbb
+
+
+（4）第二次增量数据恢复
+执行第二次增量数据恢复，代码为:innobackupex --defaults-file=/etc/my.cnf --user=root --password=Lcl@0514 --apply-log --redo-only /data/backup/mysql/aaa --incremental-dir=/data/backup/mysql/ccc
+
+
+
+（5）完整数据恢复
+执行完整数据恢复，代码为：innobackupex --defaults-file=/etc/my.cnf --user=root --password=Lcl@0514 --copy-back /data/backup/mysql/aaa
+
+（6）测试
+
+————————————————
+版权声明：本文为CSDN博主「皛皛」的原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/lcl_xiaowugui/article/details/81541357

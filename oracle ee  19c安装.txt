@@ -1,0 +1,25 @@
+安装oracle ee 19c
+Oracle 19c，或者说是Oracle 12.2.0.3，是12c中稳定的版本，就像Oracle 11.2.0.4，是值得让客户做出升级决策，
+从Oracle支持的版本序列图中，就可以看出Oracle 19c所处的地位，
+19c的RPM包下载链接，
+
+https://www.oracle.com/database/technologies/oracle19c-linux-downloads.html
+
+可以看到，19c开始支持企业版本的RPM，容量是2.5GB，
+
+使用手工方式，通过RPM安装19c数据库，只需要两步操作，
+
+步骤1：安装oracle-database-preinstall-19c-1.0-1.el7.x86_64.rpm
+
+步骤2：安装oracle-database-ee-19c-1.0-1.x86_64.rpm
+
+步骤1：安装oracle-database-preinstall-19c-1.0-1.el7.x86_64.rpm
+
+如果OEL平台，只需要执行，
+
+yum -y install oracle-database-preinstall-19c
+
+https://yum.oracle.com/repo/OracleLinux/OL7/latest/x86_64/index.html
+
+第一次执行，未必就可以成功，在我的测试环境，从错误的提示看，少了一些依赖库，看各自的依赖库进行安装
+yum install bc bind-utils compat-lib* ksh libaio* psmisc smartmontools sysstat unzip xorg-x11* -y 

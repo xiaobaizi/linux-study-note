@@ -1,0 +1,170 @@
+1 安装prometheus
+https://prometheus.io/download/#prometheus
+下载相应的包，确定好安装目录/data  /opt等
+tar xf prometheus*.tar.gz -C /data
+[root@h5-back2 ~]# ll /data/prometheus/
+total 153552
+drwxr-xr-x 2 3434 3434       38 Jul 17 02:07 console_libraries
+drwxr-xr-x 2 3434 3434      173 Jul 17 02:07 consoles
+drwxr-xr-x 6 root root      138 Jul 27 13:00 data
+-rw-r--r-- 1 3434 3434    11357 Jul 17 02:07 LICENSE
+-rw-r--r-- 1 3434 3434     3420 Jul 17 02:07 NOTICE
+-rwxr-xr-x 1 3434 3434 90924741 Jul 17 00:01 prometheus
+-rw-r--r-- 1 3434 3434     1176 Jul 27 16:19 prometheus.yml
+-rwxr-xr-x 1 3434 3434 51125736 Jul 17 00:03 promtool
+-rwxr-xr-x 1 3434 3434 15163226 Jul 17 00:03 tsdb
+启动方式一
+/data/prometheus/prometheus --config.file=/data/prometheus/prometheus.yml &
+启动方式二
+一、编辑 prometheus.service 文件
+[root@h5-back2 ~]# vim /lib/systemd/system/prometheus.service
+
+[Unit]
+Description=Prometheus
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/data/prometheus/prometheus --config.file=/data/prometheus/prometheus.yml
+
+[Install]
+WantedBy=multi-user.target
+
+二、重新载入配置文件
+systemctl daemon-reload
+
+三、设置为开机自启
+systemctl enable prometheus.service
+
+四、其他常用命令
+systemctl start prometheus.service
+
+启动 prometheus 服务
+systemctl stop prometheus.service
+
+关闭 prometheus 服务
+systemctl restart prometheus.service
+
+重启 prometheus 服务
+
+
+
+2 安装grafana   
+https://grafana.com/grafana/download                                               #admin  admin@123
+wget https://dl.grafana.com/oss/release/grafana-7.1.1-1.x86_64.rpm
+sudo yum install grafana-7.1.1-1.x86_64.rpm
+systemctl  enable  grafana-server
+systemctl  start   grafana-server
+直接安装就行
+3 监控主机
+https://prometheus.io/download/#node_exporter    下载node_exporter 安装就行，监控几个就安装几个
+
+以下是可以选择的监控项
+prometheus
+alertmanager
+blackbox_exporter
+consul_exporter
+graphite_exporter
+haproxy_exporter
+memcached_exporter
+mysqld_exporter
+node_exporter
+pushgateway
+statsd_exporter
+
+4 配置prometheus.yul文件
+[root@h5-back2 ~]# cat /data/prometheus/prometheus.yml 
+# my global config
+global:
+  scrape_interval:     15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+
+    static_configs:
+    - targets: ['localhost:9090']
+
+  - job_name: 'server2'                         监控某主机
+    static_configs:
+    - targets: ['172.17.183.44:9100']
+
+  - job_name: 'server1'                          监控某主机
+    static_configs:
+    - targets: ['172.17.183.45:9100']
+
+  - job_name: 'rabbitmq'                         消息队列监控
+    static_configs:
+    - targets: ['172.17.183.44:9099']
+	
+ （1） 消息队列rabbitmq监控
+ 
+   安装rabbitmq_exporter
+   地址：https://github.com/kbudde/rabbitmq_exporter/releases?after=v1.0-wip2  每个版本都在里面，可以选择相应的版本进行安装
+   tar -xvf rabbitmq_exporter-0.20.0.linux-amd64.tar.gz
+   cd rabbitmq_exporter-0.20.0.linux-amd64
+   RABBIT_USER=guest RABBIT_PASSWORD=guest OUTPUT_FORMAT=JSON PUBLISH_PORT=9099 RABBIT_URL=http://localhost:15672 nohup ./rabbitmq_exporter &
+   
+   配置prometheus
+   
+    - job_name: 'RabbitMQ'
+    static_configs:
+      - targets: ['10.10.83.162:9099']
+        labels:
+          instance: RabbitMQ-10.10.83.162
+    重启prometheus
+   
+监控主机进程
+参考https://www.cnblogs.com/huandada/p/10431667.html
+1 每个主机添加监控软件，process-exporter，
+定义全部进程监控
+vim conf.yaml
+process_names:
+  - name: "{{.Comm}}"
+    cmdline:
+    - '.+'
+重启服务
+
+./process-exporter -config.path conf.yaml
+查看所有监控项
+
+curl http://localhost:9256/metrics
+
+定义进程名监控
+Process-exporter 可以进程名字匹配进程，获取进程信息。匹配规则由name对应的模板变量决定，以下表示监控进程名字为nginx 与 zombie 的进程状态
+
+vim process-name.yaml
+process_names:
+  - name: "{{.Matches}}"
+    cmdline:
+    - 'nginx'
+
+  - name: "{{.Matches}}"
+    cmdline:
+    - 'zombie'
+重启服务
+
+./process-exporter -config.path process-name.yaml &
+查看数据
+
+curl http://localhost:9256/metrics   > ccc
+

@@ -1,0 +1,1 @@
+https://www.cnblogs.com/bigdevilking/p/9758143.html  redis集群部署参考
